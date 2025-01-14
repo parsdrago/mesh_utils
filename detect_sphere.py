@@ -30,8 +30,11 @@ def fit_to_sphere(points: np.ndarray) -> Sphere:
     radius = 0
     counts = 0
 
-    for _ in range(100):
-        sampled = random.sample(list(points), 4)
+    listed_points = list(points)
+    size = len(listed_points)
+
+    for _ in range(1000):
+        sampled = random.sample(listed_points, 4)
         sphere = trimesh.nsphere.fit_nsphere(sampled)
 
         new_count = get_points_on_sphere(points, Sphere(sphere[0], sphere[1])).shape[0]
@@ -40,6 +43,9 @@ def fit_to_sphere(points: np.ndarray) -> Sphere:
             center = sphere[0]
             radius = sphere[1]
             counts = new_count
+
+        if counts > size / 10:
+            break
 
     return Sphere(center, radius)
 
@@ -62,13 +68,12 @@ def get_points_on_sphere(points: np.ndarray, sphere: Sphere) -> np.ndarray:
     np.ndarray
         The points on the surface of the sphere
     """
-    # Compute the distance of each point to the sphere center
-    distances = np.linalg.norm(points - sphere.center, axis=1)
+    # Compute the squared distance of each point to the sphere center
+    squared_distances = np.sum((points - sphere.center) ** 2, axis=1)
 
     # Compute the points on the sphere
-    points_on_sphere = points[np.isclose(distances, sphere.radius, atol=1e-6)]
+    points_on_sphere = points[np.isclose(squared_distances, sphere.radius ** 2, atol=1e-6)]
     return points_on_sphere
-
 
 def detect_spheres(mesh: np.ndarray, sphere_count: int) -> np.ndarray:
     """
@@ -87,6 +92,7 @@ def detect_spheres(mesh: np.ndarray, sphere_count: int) -> np.ndarray:
         The detected spheres
     """
     spheres = []
+    mesh_counts = []
 
     for _ in range(sphere_count):
         sphere = fit_to_sphere(mesh)
@@ -98,7 +104,12 @@ def detect_spheres(mesh: np.ndarray, sphere_count: int) -> np.ndarray:
         mesh_to_remove = get_points_on_sphere(mesh, sphere)
         mesh = mesh[~np.isin(mesh, mesh_to_remove).all(axis=1)]
 
+        mesh_counts.append(mesh.shape[0])
+
         if mesh.shape[0] < 4:
             break
+
+    # sort spheres by the number of points on the sphere
+    spheres = [sphere for _, sphere in sorted(zip(mesh_counts, spheres), key=lambda pair: pair[0], reverse=True)]
 
     return spheres

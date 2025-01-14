@@ -295,3 +295,55 @@ def test_detect_two_spheres_with_different_radiuses_from_hemi_sphere_offset_with
     assert np.allclose(spheres[0].radius, 1, atol=0.001)
     assert np.allclose(spheres[1].center, np.array([1, 0, 0]), atol=0.001)
     assert np.allclose(spheres[1].radius, 2, atol=0.001)
+
+
+def test_detect_two_spheres_with_different_radiuses_from_hemi_sphere_offset_with_dummy_points_with_large_example():
+    # Generate a single hemisphere
+    n_points1 = 20000
+    sphere1 = generate_hemi_sphere_surface_points(n_points1, center=np.array([0, 0, 0]))
+
+    # Generate a second hemispher
+    n_points2 = 10000
+    sphere2 = generate_hemi_sphere_surface_points(n_points2, radius=2, center=np.array([1, 0, 0]))
+
+    n_points3 = 10000
+    dummy_points = np.random.uniform(-3, 3, (n_points3, 3))
+
+    # Combine the spheres
+    points = np.vstack([sphere1, sphere2, dummy_points])
+
+    # Detect the spheres
+    spheres = detect_spheres(points, sphere_count=2)
+
+    # Check that the detected spheres are close to the original spheres
+    assert len(spheres) == 2
+    assert np.allclose(spheres[0].center, np.array([0, 0, 0]), atol=0.001)
+    assert np.allclose(spheres[0].radius, 1, atol=0.001)
+    assert np.allclose(spheres[1].center, np.array([1, 0, 0]), atol=0.001)
+    assert np.allclose(spheres[1].radius, 2, atol=0.001)
+
+
+def test_detect_two_spheres_with_different_radiuses_from_hemi_sphere_offset_with_dummy_points_with_large_example_with_unrounded():
+    # Generate a single hemisphere
+    n_points1 = 20000
+    sphere1 = generate_hemi_sphere_surface_points(n_points1, radius=1.414, center=np.array([0, 0, 0]))
+
+    # Generate a second hemispher
+    n_points2 = 10000
+    sphere2 = generate_hemi_sphere_surface_points(n_points2, radius=3.141, center=np.array([0.123, 0, 0]))
+
+    n_points3 = 10000
+    dummy_points = np.random.uniform(-3, 3, (n_points3, 3))
+
+    # Combine the spheres
+    points = np.vstack([sphere1, sphere2, dummy_points])
+
+    # Detect the spheres
+    spheres = detect_spheres(points, sphere_count=2)
+
+    # Check that the detected spheres are close to the original spheres
+    assert len(spheres) == 2
+    assert np.allclose(spheres[0].center, np.array([0, 0, 0]), atol=0.001)
+    assert np.allclose(spheres[0].radius, 1.414, atol=0.001)
+    assert np.allclose(spheres[1].center, np.array([0.123, 0, 0]), atol=0.001)
+    assert np.allclose(spheres[1].radius, 3.141, atol=0.001)
